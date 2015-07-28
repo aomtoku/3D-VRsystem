@@ -1,7 +1,7 @@
-# 3D Video Generator on FPGA in Make Faire Tokyo 2015
-=======================================================
+FPGA VR Robot Avatar (3D Video Generator on FPGA) in Make Faire Tokyo 2015
+--------------------------------------------------------------------------
 
-(http://makezine.jp/event/mft2015/ "Make Faire Tokyo 2015")
+Make Faire Tokyo 2015 http://makezine.jp/event/mft2015/
 
 [> Directory Structure
  /cores/      Cores library, with Verilog sources, test benches and documentation.
