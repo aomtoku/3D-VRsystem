@@ -81,8 +81,8 @@ synchro #(
 
 synchro #(
 	.INITIALIZE("LOGIC0")
-) clk_sws_0 (
-	.async  ( SW[3]      ),
+) clk_sws_1 (
+	.async  ( SW[4]      ),
 	.sync   ( sws_clk[1] ),
 	.clk    ( pclk       )
 );
@@ -91,7 +91,6 @@ reg  [1:0] sws_clk_sync; //clk synchronous output
 always @(posedge pclk) begin
 	sws_clk_sync <= sws_clk;
 end
-
 
 /* --------- Power UP logic -------------- */
 wire pclk_lckd;
@@ -159,9 +158,9 @@ localparam HPIXELS_FHD = 12'd1920; //Horizontal Live Pixels
 localparam VLINES_FHD  = 12'd1080;  //Vertical Live ines
 localparam HSYNCPW_FHD = 12'd44;  //HSYNC Pulse Width
 localparam VSYNCPW_FHD = 12'd5;    //VSYNC Pulse Width
-localparam HFNPRCH_FHD = 12'd88;   //Horizontal Front Portch
+localparam HFNPRCH_FHD = 12'd87;//88   //Horizontal Front Portch
 localparam VFNPRCH_FHD = 12'd4;    //Vertical Front Portch
-localparam HBKPRCH_FHD = 12'd148;  //Horizontal Front Portch
+localparam HBKPRCH_FHD = 12'd148;//148  //Horizontal Front Portch
 localparam VBKPRCH_FHD = 12'd36;   //Vertical Front Portch
 
 //1440x900@60Hz
@@ -198,7 +197,7 @@ reg hvsync_polarity  ;
 always @(*) begin
 	case (sws_clk_sync)
 		SW_FHD : begin
-			hvsync_polarity = 1'b1;
+			hvsync_polarity = 1'b0;
 
 			tc_hsblnk = HPIXELS_FHD - 12'd1;
 			tc_hssync = HPIXELS_FHD - 12'd1 + HFNPRCH_FHD;

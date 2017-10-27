@@ -73,7 +73,7 @@ wire  [7:0] flipcnt      = (mode == SW_HMD) ? BRSTNUM :
 wire [10:0] linedepth    = (mode == SW_HMD) ? DEPTH - 1 : 
                            (mode == SW_XGA) ? 11'd767 :
                            (mode == SW_FHD) ? /* todo */ 0 : 0;
-wire  [7:0] brstlim      = (mode == SW_HMD) ? BRST_LENGTH : 64; 
+wire  [7:0] brstlim      = (mode == SW_HMD) ? BRST_LENGTH : 
                            (mode == SW_XGA) ? 64 :
                            (mode == SW_FHD) ? /* todo */ 0 : 0;
 /* -------------- Read Fifo ------------------ */
@@ -103,7 +103,7 @@ assign ored   = (mode == SW_HMD) ? {pxl_out[ 9: 5], 3'd0} :
 assign ogreen = (mode == SW_HMD) ? {pxl_out[15:10], 2'd0} :
                 (mode == SW_XGA) ? llgreen :
                 (mode == SW_FHD) ? /* todo */0 : 0;
-assign oblue  = (mode == SW_HMD) ? {pxl_out[ 4: 0], 3'd0} : llblue;
+assign oblue  = (mode == SW_HMD) ? {pxl_out[ 4: 0], 3'd0} : 
                 (mode == SW_XGA) ? llblue :
                 (mode == SW_FHD) ? /* todo */0 : 0;
 `else
@@ -198,7 +198,7 @@ end
 
 /* ------------ FIFO instatnce --------------------- */
 wire rd_en_f = (mode == SW_HMD) ? fifo_wr_en : 
-               (mode == SW_XGA) ? fifo_wr_en && ((brstcnt == 8'd1) || (brstcnt == 8'd2)) 
+               (mode == SW_XGA) ? fifo_wr_en && ((brstcnt == 8'd1) || (brstcnt == 8'd2)) :
                (mode == SW_FHD) ? /* todo */0 : 0;
 
 wr_fifo4line rd_fifo (
