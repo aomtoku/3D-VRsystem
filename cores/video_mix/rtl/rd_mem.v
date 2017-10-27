@@ -47,6 +47,7 @@ localparam READ          =   3'd3;
 localparam SW_HMD        =  2'd0;
 localparam SW_XGA        =  2'd1;
 localparam SW_FHD        =  2'd2;
+localparam SW_720P       =  2'd3;
 //***************************************************************
 // Burst Length and Data Transport
 //   Horizontal Pixels = BRST_LEN_FHD x 8 (pixels) x BRST_NUM_FHD
@@ -63,9 +64,13 @@ localparam BRST_NUM_XGA  =   4;
 localparam BRST_LEN_FHD  =  60;
 localparam BRST_NUM_FHD  =   4;
 
+localparam BRST_LEN_720P  =  40;
+localparam BRST_NUM_720P  =   4;
+
 localparam DEPTH_HMD     =  900;
 localparam DEPTH_XGA     =  768;
 localparam DEPTH_FHD     = 1080;
+localparam DEPTH_720P    =  720;
 
 /* -------------- State Machine -------------- */
 reg         rd_en;
@@ -74,23 +79,27 @@ reg   [7:0] cntr, brstcnt;
 reg  [10:0] linecnt;
 reg  [29:0] cmd_byte;
 
-assign mcb_cmd_bl        = (mode == SW_HMD) ? BRST_LEN_HMD - 1 : 
-                           (mode == SW_XGA) ? BRST_LEN_XGA - 1 :
-                           (mode == SW_FHD) ? BRST_LEN_FHD - 1 : 0;
+assign mcb_cmd_bl        = (mode == SW_HMD)  ? BRST_LEN_HMD  - 1 :
+                           (mode == SW_XGA)  ? BRST_LEN_XGA  - 1 :
+                           (mode == SW_FHD)  ? BRST_LEN_FHD  - 1 :
+                           (mode == SW_720P) ? BRST_LEN_720P - 1 : 0;
 assign mcb_rd_en         = rd_en;
 assign mcb_cmd_en        = cmd_en;
 assign mcb_cmd_instr     = READ;
 assign mcb_cmd_byte_addr = cmd_byte;
 
-wire  [7:0] flipcnt      = (mode == SW_HMD) ? BRST_NUM_HMD : 
-                           (mode == SW_XGA) ? BRST_NUM_XGA :
-                           (mode == SW_FHD) ? BRST_NUM_FHD : 0;
-wire [10:0] linedepth    = (mode == SW_HMD) ? DEPTH_HMD - 1 : 
-                           (mode == SW_XGA) ? DEPTH_XGA - 1 :
-                           (mode == SW_FHD) ? DEPTH_FHD - 1 : 0;
-wire  [7:0] brstlim      = (mode == SW_HMD) ? BRST_LEN_HMD : 
-                           (mode == SW_XGA) ? BRST_LEN_XGA :
-                           (mode == SW_FHD) ? BRST_LEN_FHD : 0;
+wire  [7:0] flipcnt      = (mode == SW_HMD)  ? BRST_NUM_HMD  :
+                           (mode == SW_XGA)  ? BRST_NUM_XGA  :
+                           (mode == SW_FHD)  ? BRST_NUM_FHD  :
+                           (mode == SW_720P) ? BRST_NUM_720P : 0;
+wire [10:0] linedepth    = (mode == SW_HMD)  ? DEPTH_HMD  - 1 :
+                           (mode == SW_XGA)  ? DEPTH_XGA  - 1 :
+                           (mode == SW_FHD)  ? DEPTH_FHD  - 1 :
+                           (mode == SW_720P) ? DEPTH_720P - 1 : 0;
+wire  [7:0] brstlim      = (mode == SW_HMD)  ? BRST_LEN_HMD  : 
+                           (mode == SW_XGA)  ? BRST_LEN_XGA  :
+                           (mode == SW_FHD)  ? BRST_LEN_FHD  :
+                           (mode == SW_720P) ? BRST_LEN_720P : 0;
 /* -------------- Read Fifo ------------------ */
 reg  [DWIDTH-1:0] sft_pxl;
 reg        [12:0] brst_cnt_p;
@@ -107,21 +116,25 @@ wire              fifo_rd_en = de && cnt8 == 3'd0;
 wire              frame1      = brstcnt[1];
 wire              frame2      = brstcnt[0];
 wire              frame3      = brstcnt[1]/*todo*/;
-wire              frame       = (mode == SW_HMD) ? frame1 : 
-                                (mode == SW_XGA) ? frame2 :
-                                (mode == SW_FHD) ? frame3 : 0;
+wire              frame       = (mode == SW_HMD)  ? frame1 : 
+                                (mode == SW_XGA)  ? frame2 :
+                                (mode == SW_FHD)  ? frame3 : 0;
+                                (mode == SW_720P) ? frame3 : 0;
 
 `ifdef RGB
 wire [7:0] llred, llgreen, llblue;
-assign ored   = (mode == SW_HMD) ? {pxl_out[ 9: 5], 3'd0} :
-                (mode == SW_XGA) ? llred :
-                (mode == SW_FHD) ? {pxl_out[ 9: 5], 3'd0} : 0;
-assign ogreen = (mode == SW_HMD) ? {pxl_out[15:10], 2'd0} :
-                (mode == SW_XGA) ? llgreen :
-                (mode == SW_FHD) ? {pxl_out[15:10], 2'd0} : 0;
-assign oblue  = (mode == SW_HMD) ? {pxl_out[ 4: 0], 3'd0} : 
-                (mode == SW_XGA) ? llblue :
-                (mode == SW_FHD) ? {pxl_out[ 4: 0], 3'd0} : 0;
+assign ored   = (mode == SW_HMD)  ? {pxl_out[ 9: 5], 3'd0} :
+                (mode == SW_XGA)  ? llred :
+                (mode == SW_FHD)  ? {pxl_out[ 9: 5], 3'd0} :
+                (mode == SW_720P) ? {pxl_out[ 9: 5], 3'd0} : 0;
+assign ogreen = (mode == SW_HMD)  ? {pxl_out[15:10], 2'd0} :
+                (mode == SW_XGA)  ? llgreen :
+                (mode == SW_FHD)  ? {pxl_out[15:10], 2'd0} :
+                (mode == SW_720P) ? {pxl_out[15:10], 2'd0} : 0;
+assign oblue  = (mode == SW_HMD)  ? {pxl_out[ 4: 0], 3'd0} : 
+                (mode == SW_XGA)  ? llblue :
+                (mode == SW_FHD)  ? {pxl_out[ 4: 0], 3'd0} :
+                (mode == SW_720P) ? {pxl_out[ 4: 0], 3'd0} : 0;
 `else
 assign ored   = pxl_out[15:8];
 assign ogreen = pxl_out[ 7:0];
@@ -194,6 +207,9 @@ always @ (posedge memclk) begin
 					end else if (mode == SW_FHD) begin
 						if (brstcnt[0] == 1/*todo*/)
 							brst_cnt_p <= 13'd960;
+					end else if (mode == SW_720P) begin
+						if (brstcnt[0] == 1)
+							brst_cnt_p <= 13'd640;
 					end
 				end
 			end
@@ -227,9 +243,10 @@ always @ (posedge memclk) begin
 end
 
 /* ------------ FIFO instatnce --------------------- */
-wire rd_en_f = (mode == SW_HMD) ? fifo_wr_en : 
-               (mode == SW_XGA) ? fifo_wr_en && ((brstcnt == 8'd1) || (brstcnt == 8'd2)) :
-               (mode == SW_FHD) ? fifo_wr_en : 0;
+wire rd_en_f = (mode == SW_HMD)  ? fifo_wr_en :
+               (mode == SW_XGA)  ? fifo_wr_en && ((brstcnt == 8'd1) || (brstcnt == 8'd2)) :
+               (mode == SW_FHD)  ? fifo_wr_en :
+               (mode == SW_720P) ? fifo_wr_en : 0;
 
 wr_fifo4line rd_fifo (
 	.rst    (rst)         ,
