@@ -30,7 +30,7 @@ module mixer #(
 	input  wire [7:0] ig1,
 	input  wire [7:0] ib1,
 	/* Output port for Ethernet */
-	input  wire       mode,
+	input  wire [1:0] mode,
 	input  wire       opclk,
 	input  wire       oserdes_rst,
 	input  wire       ohs,

@@ -53,10 +53,12 @@ always @(posedge clk100) clk_buf <= ~clk_buf;
 
 BUFG clk50m_bufgbufg (.I(clk50m), .O(clk50m_bufg));
 /* --------- Switching Logic -------------- */
-wire  sws_sync;
+wire [1:0] sws_sync;
 synchro #(.INITIALIZE("LOGIC0"))
-synchro_sws_0 (.async(SW[3]),.sync(sws_sync),.clk(clk50m_bufg));
-reg  sws_sync_q;
+synchro_sws_0 (.async(SW[3]),.sync(sws_sync[0]),.clk(clk50m_bufg));
+synchro #(.INITIALIZE("LOGIC0"))
+synchro_sws_1 (.async(SW[4]),.sync(sws_sync[1]),.clk(clk50m_bufg));
+reg [1:0] sws_sync_q;
 always @ (posedge clk50m_bufg) sws_sync_q <= sws_sync;
 wire sw0_rdy;
 
@@ -67,17 +69,25 @@ debnce debsw0 (
 );
 
 wire pclk;
-wire sws_clk;
+wire [1:0] sws_clk;
 
 synchro #(
 	.INITIALIZE("LOGIC0")
 ) clk_sws_0 (
-	.async(SW[3]),
-	.sync(sws_clk),
-	.clk(pclk)
+	.async  ( SW[3]      ),
+	.sync   ( sws_clk[0] ),
+	.clk    ( pclk       )
 );
 
-reg  [3:0] sws_clk_sync; //clk synchronous output
+synchro #(
+	.INITIALIZE("LOGIC0")
+) clk_sws_0 (
+	.async  ( SW[3]      ),
+	.sync   ( sws_clk[1] ),
+	.clk    ( pclk       )
+);
+
+reg  [1:0] sws_clk_sync; //clk synchronous output
 always @(posedge pclk) begin
 	sws_clk_sync <= sws_clk;
 end
@@ -115,18 +125,15 @@ SRL16E SRL16E_0 (
 );
 
 /* ---------- Resolution Logic ----------- */
-localparam SW_HMD = 1'b0;
-localparam SW_XGA = 1'b1;
+localparam SW_HMD = 2'd0;
+localparam SW_XGA = 2'd1;
+localparam SW_FHD = 2'd2;
 
 reg [7:0] pclk_M, pclk_D;
 
 always @ (posedge clk50m_bufg) begin
 	if(switch) begin
 		case(sws_sync_q)
-			SW_FHD: begin //148.5MHz 
-				pclk_M <= 8'd199 - 8'd1;
-				pclk_D <= 8'd67 - 8'd1;
-			end
 			SW_HMD: begin //106.47MHz 
 				pclk_M <= 8'd181 - 8'd1;
 				pclk_D <= 8'd85 - 8'd1;
@@ -134,6 +141,10 @@ always @ (posedge clk50m_bufg) begin
 			SW_XGA: begin //65 MHz pixel clock
 				pclk_M <= 8'd82 - 8'd1;
 				pclk_D <= 8'd63 - 8'd1;
+			end
+			SW_FHD: begin //148.5MHz 
+				pclk_M <= 8'd199 - 8'd1;
+				pclk_D <= 8'd67 - 8'd1;
 			end
 			default: begin //106.47 MHz pixel clock
 				pclk_M <= 8'd181 - 8'd1;
