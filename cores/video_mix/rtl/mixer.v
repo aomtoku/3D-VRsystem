@@ -238,8 +238,9 @@ reg  frame_en, ovsf;
 `ifndef SIMULATION
 wire vrst = ~frame_en || resetinr || oserdes_rst;
 always @ (posedge opclk) 
-	if (rst) frame_en <= 1'd0;
-	else begin
+	if (rst) begin
+		frame_en <= 1'd0;
+	end else begin
 		ovsf <= ovs;
 		if ({ovs,ovsf} == 2'b10) frame_en <= 1'd1;
 	end

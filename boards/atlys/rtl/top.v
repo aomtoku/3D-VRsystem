@@ -1,5 +1,6 @@
 `define MIXER
 `define HDMI
+`define FHD
 module top (
 	input  wire                        SYS_CLK,
 	input  wire                        RSTBTN_,
@@ -127,6 +128,7 @@ SRL16E SRL16E_0 (
 localparam SW_HMD = 2'd0;
 localparam SW_XGA = 2'd1;
 localparam SW_FHD = 2'd2;
+localparam SW_720P = 2'd3;
 
 reg [7:0] pclk_M, pclk_D;
 
@@ -141,10 +143,16 @@ always @ (posedge clk50m_bufg) begin
 				pclk_M <= 8'd82 - 8'd1;
 				pclk_D <= 8'd63 - 8'd1;
 			end
+			SW_720P: begin //74.25MHz
+				pclk_M <= 8'd248 - 8'd1;
+				pclk_D <= 8'd167 - 8'd1;
+			end
+`ifdef FHD
 			SW_FHD: begin //148.5MHz 
 				pclk_M <= 8'd199 - 8'd1;
 				pclk_D <= 8'd67 - 8'd1;
 			end
+`endif /*FHD*/
 			default: begin //106.47 MHz pixel clock
 				pclk_M <= 8'd181 - 8'd1;
 				pclk_D <= 8'd85 - 8'd1;
@@ -153,16 +161,26 @@ always @ (posedge clk50m_bufg) begin
     end
 end
 
+`ifdef FHD
 //1920x1080@60Hz
-localparam HPIXELS_FHD = 12'd1920; //Horizontal Live Pixels
-localparam VLINES_FHD  = 12'd1080;  //Vertical Live ines
-localparam HSYNCPW_FHD = 12'd44;  //HSYNC Pulse Width
+localparam HPIXELS_FHD = 12'd1920; //1920 //Horizontal Live Pixels
+localparam VLINES_FHD  = 12'd1080; //Vertical Live ines
+localparam HSYNCPW_FHD = 12'd44;   //HSYNC Pulse Width
 localparam VSYNCPW_FHD = 12'd5;    //VSYNC Pulse Width
-localparam HFNPRCH_FHD = 12'd87;//88   //Horizontal Front Portch
+localparam HFNPRCH_FHD = 12'd87; //88  //Horizontal Front Portch
 localparam VFNPRCH_FHD = 12'd4;    //Vertical Front Portch
-localparam HBKPRCH_FHD = 12'd148;//148  //Horizontal Front Portch
+localparam HBKPRCH_FHD = 12'd149; //148  //Horizontal Front Portch
 localparam VBKPRCH_FHD = 12'd36;   //Vertical Front Portch
+`endif /*FHD*/
 
+localparam HPIXELS_720P = 12'd1280;//Horizontal Live Pixels
+localparam VLINES_720P  = 12'd720; //Vertical Live ines
+localparam HSYNCPW_720P = 12'd40;  //HSYNC Pulse Width
+localparam VSYNCPW_720P = 12'd5;   //VSYNC Pulse Width
+localparam HFNPRCH_720P = 12'd110; //Horizontal Front Portch
+localparam VFNPRCH_720P = 12'd5;   //Vertical Front Portch
+localparam HBKPRCH_720P = 12'd220; //Horizontal Front Portch
+localparam VBKPRCH_720P = 12'd20;  //Vertical Front Portch
 //1440x900@60Hz
 localparam HPIXELS_HMD = 12'd1440; //Horizontal Live Pixels
 localparam VLINES_HMD  = 12'd900;  //Vertical Live ines
@@ -196,6 +214,7 @@ reg hvsync_polarity  ;
 
 always @(*) begin
 	case (sws_clk_sync)
+`ifdef FHD
 		SW_FHD : begin
 			hvsync_polarity = 1'b0;
 
@@ -207,6 +226,19 @@ always @(*) begin
 			tc_vssync =  VLINES_FHD - 12'd1 + VFNPRCH_FHD;
 			tc_vesync =  VLINES_FHD - 12'd1 + VFNPRCH_FHD + VSYNCPW_FHD;
 			tc_veblnk =  VLINES_FHD - 12'd1 + VFNPRCH_FHD + VSYNCPW_FHD + VBKPRCH_FHD;
+		end
+`endif /*FHD*/
+		SW_720P : begin
+			hvsync_polarity = 1'b0;
+
+			tc_hsblnk = HPIXELS_720P - 12'd1;
+			tc_hssync = HPIXELS_720P - 12'd1 + HFNPRCH_720P;
+			tc_hesync = HPIXELS_720P - 12'd1 + HFNPRCH_720P + HSYNCPW_720P;
+			tc_heblnk = HPIXELS_720P - 12'd1 + HFNPRCH_720P + HSYNCPW_720P + HBKPRCH_720P;
+			tc_vsblnk =  VLINES_720P - 12'd1;
+			tc_vssync =  VLINES_720P - 12'd1 + VFNPRCH_720P;
+			tc_vesync =  VLINES_720P - 12'd1 + VFNPRCH_720P + VSYNCPW_720P;
+			tc_veblnk =  VLINES_720P - 12'd1 + VFNPRCH_720P + VSYNCPW_720P + VBKPRCH_720P;
 		end
 		SW_HMD : begin
 			hvsync_polarity = 1'b1;
