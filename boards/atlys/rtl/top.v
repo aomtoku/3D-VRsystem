@@ -60,27 +60,35 @@ reg  sws_sync_q;
 always @ (posedge clk50m_bufg) sws_sync_q <= sws_sync;
 wire sw0_rdy;
 
- debnce debsw0 (
- 	.sync(sws_sync_q),
- 	.debnced(sw0_rdy),
- 	.clk(clk50m_bufg)
- );
+debnce debsw0 (
+	.sync(sws_sync_q),
+	.debnced(sw0_rdy),
+	.clk(clk50m_bufg)
+);
 
 wire pclk;
 wire sws_clk;
-synchro #(.INITIALIZE("LOGIC0"))
-clk_sws_0 (.async(SW[3]),.sync(sws_clk),.clk(pclk));
+
+synchro #(
+	.INITIALIZE("LOGIC0")
+) clk_sws_0 (
+	.async(SW[3]),
+	.sync(sws_clk),
+	.clk(pclk)
+);
 
 reg  [3:0] sws_clk_sync; //clk synchronous output
 always @(posedge pclk) begin
-    sws_clk_sync <= sws_clk;
+	sws_clk_sync <= sws_clk;
 end
 
 
 /* --------- Power UP logic -------------- */
 wire pclk_lckd;
 wire pwrup;
-SRL16E #(.INIT(16'h1)) pwrup_0 (
+SRL16E #(
+	.INIT(16'h1)
+) pwrup_0 (
 	.Q(pwrup),
 	.A0(1'b1),
 	.A1(1'b1),
@@ -96,14 +104,14 @@ always @ (posedge clk50m_bufg) switch <= pwrup | sw0_rdy;
 
 wire gopclk;
 SRL16E SRL16E_0 (
-  .Q(gopclk),
-  .A0(1'b1),
-  .A1(1'b1),
-  .A2(1'b1),
-  .A3(1'b1),
-  .CE(1'b1),
-  .CLK(clk50m_bufg),
-  .D(switch)
+	.Q(gopclk),
+	.A0(1'b1),
+	.A1(1'b1),
+	.A2(1'b1),
+	.A3(1'b1),
+	.CE(1'b1),
+	.CLK(clk50m_bufg),
+	.D(switch)
 );
 
 /* ---------- Resolution Logic ----------- */
@@ -113,80 +121,106 @@ localparam SW_XGA = 1'b1;
 reg [7:0] pclk_M, pclk_D;
 
 always @ (posedge clk50m_bufg) begin
-    if(switch) begin
-        case(sws_sync_q)
-			SW_HMD: begin //106.47MHz 
-                pclk_M <= 8'd181 - 8'd1;
-                pclk_D <= 8'd85 - 8'd1;
+	if(switch) begin
+		case(sws_sync_q)
+			SW_FHD: begin //148.5MHz 
+				pclk_M <= 8'd199 - 8'd1;
+				pclk_D <= 8'd67 - 8'd1;
 			end
-            SW_XGA: begin //65 MHz pixel clock
-                pclk_M <= 8'd82 - 8'd1;
-                pclk_D <= 8'd63 - 8'd1;
-            end
-            default: begin //106.47 MHz pixel clock
-                pclk_M <= 8'd181 - 8'd1;
-                pclk_D <= 8'd85 - 8'd1;
-            end
-        endcase
+			SW_HMD: begin //106.47MHz 
+				pclk_M <= 8'd181 - 8'd1;
+				pclk_D <= 8'd85 - 8'd1;
+			end
+			SW_XGA: begin //65 MHz pixel clock
+				pclk_M <= 8'd82 - 8'd1;
+				pclk_D <= 8'd63 - 8'd1;
+			end
+			default: begin //106.47 MHz pixel clock
+				pclk_M <= 8'd181 - 8'd1;
+				pclk_D <= 8'd85 - 8'd1;
+			end
+		endcase
     end
 end
 
+//1920x1080@60Hz
+localparam HPIXELS_FHD = 12'd1920; //Horizontal Live Pixels
+localparam VLINES_FHD  = 12'd1080;  //Vertical Live ines
+localparam HSYNCPW_FHD = 12'd44;  //HSYNC Pulse Width
+localparam VSYNCPW_FHD = 12'd5;    //VSYNC Pulse Width
+localparam HFNPRCH_FHD = 12'd88;   //Horizontal Front Portch
+localparam VFNPRCH_FHD = 12'd4;    //Vertical Front Portch
+localparam HBKPRCH_FHD = 12'd148;  //Horizontal Front Portch
+localparam VBKPRCH_FHD = 12'd36;   //Vertical Front Portch
+
 //1440x900@60Hz
-localparam HPIXELS_HMD = 11'd1440; //Horizontal Live Pixels
-localparam VLINES_HMD  = 11'd900;  //Vertical Live ines
-localparam HSYNCPW_HMD = 11'd152;  //HSYNC Pulse Width
-localparam VSYNCPW_HMD = 11'd3;    //VSYNC Pulse Width
-localparam HFNPRCH_HMD = 11'd80;   //Horizontal Front Portch
-localparam VFNPRCH_HMD = 11'd1;    //Vertical Front Portch
-localparam HBKPRCH_HMD = 11'd232;  //Horizontal Front Portch
-localparam VBKPRCH_HMD = 11'd28;   //Vertical Front Portch
+localparam HPIXELS_HMD = 12'd1440; //Horizontal Live Pixels
+localparam VLINES_HMD  = 12'd900;  //Vertical Live ines
+localparam HSYNCPW_HMD = 12'd152;  //HSYNC Pulse Width
+localparam VSYNCPW_HMD = 12'd3;    //VSYNC Pulse Width
+localparam HFNPRCH_HMD = 12'd80;   //Horizontal Front Portch
+localparam VFNPRCH_HMD = 12'd1;    //Vertical Front Portch
+localparam HBKPRCH_HMD = 12'd232;  //Horizontal Front Portch
+localparam VBKPRCH_HMD = 12'd28;   //Vertical Front Portch
 
 //1024x768@60HZ
-localparam HPIXELS_XGA = 11'd1023; //Horizontal Live Pixels
-localparam VLINES_XGA  = 11'd768;  //Vertical Live ines
-localparam HSYNCPW_XGA = 11'd136;  //HSYNC Pulse Width
-localparam VSYNCPW_XGA = 11'd6;    //VSYNC Pulse Width
-localparam HFNPRCH_XGA = 11'd24;   //Horizontal Front Portch
-localparam VFNPRCH_XGA = 11'd3;    //Vertical Front Portch
-localparam HBKPRCH_XGA = 11'd160;  //Horizontal Front Portch
-localparam VBKPRCH_XGA = 11'd29;   //Vertical Front Portch
+localparam HPIXELS_XGA = 12'd1023; //Horizontal Live Pixels
+localparam VLINES_XGA  = 12'd768;  //Vertical Live ines
+localparam HSYNCPW_XGA = 12'd136;  //HSYNC Pulse Width
+localparam VSYNCPW_XGA = 12'd6;    //VSYNC Pulse Width
+localparam HFNPRCH_XGA = 12'd24;   //Horizontal Front Portch
+localparam VFNPRCH_XGA = 12'd3;    //Vertical Front Portch
+localparam HBKPRCH_XGA = 12'd160;  //Horizontal Front Portch
+localparam VBKPRCH_XGA = 12'd29;   //Vertical Front Portch
 
-reg [10:0] tc_hsblnk ;
-reg [10:0] tc_hssync ;
-reg [10:0] tc_hesync ;
-reg [10:0] tc_heblnk ;
-reg [10:0] tc_vsblnk ;
-reg [10:0] tc_vssync ;
-reg [10:0] tc_vesync ;
-reg [10:0] tc_veblnk ;
+reg [11:0] tc_hsblnk ;
+reg [11:0] tc_hssync ;
+reg [11:0] tc_hesync ;
+reg [11:0] tc_heblnk ;
+reg [11:0] tc_vsblnk ;
+reg [11:0] tc_vssync ;
+reg [11:0] tc_vesync ;
+reg [11:0] tc_veblnk ;
 reg hvsync_polarity  ;
 
 
 always @(*) begin
 	case (sws_clk_sync)
+		SW_FHD : begin
+			hvsync_polarity = 1'b1;
+
+			tc_hsblnk = HPIXELS_FHD - 12'd1;
+			tc_hssync = HPIXELS_FHD - 12'd1 + HFNPRCH_FHD;
+			tc_hesync = HPIXELS_FHD - 12'd1 + HFNPRCH_FHD + HSYNCPW_FHD;
+			tc_heblnk = HPIXELS_FHD - 12'd1 + HFNPRCH_FHD + HSYNCPW_FHD + HBKPRCH_FHD;
+			tc_vsblnk =  VLINES_FHD - 12'd1;
+			tc_vssync =  VLINES_FHD - 12'd1 + VFNPRCH_FHD;
+			tc_vesync =  VLINES_FHD - 12'd1 + VFNPRCH_FHD + VSYNCPW_FHD;
+			tc_veblnk =  VLINES_FHD - 12'd1 + VFNPRCH_FHD + VSYNCPW_FHD + VBKPRCH_FHD;
+		end
 		SW_HMD : begin
 			hvsync_polarity = 1'b1;
 
-			tc_hsblnk = HPIXELS_HMD - 11'd1;
-			tc_hssync = HPIXELS_HMD - 11'd1 + HFNPRCH_HMD;
-			tc_hesync = HPIXELS_HMD - 11'd1 + HFNPRCH_HMD + HSYNCPW_HMD;
-			tc_heblnk = HPIXELS_HMD - 11'd1 + HFNPRCH_HMD + HSYNCPW_HMD + HBKPRCH_HMD;
-			tc_vsblnk =  VLINES_HMD - 11'd1;
-			tc_vssync =  VLINES_HMD - 11'd1 + VFNPRCH_HMD;
-			tc_vesync =  VLINES_HMD - 11'd1 + VFNPRCH_HMD + VSYNCPW_HMD;
-			tc_veblnk =  VLINES_HMD - 11'd1 + VFNPRCH_HMD + VSYNCPW_HMD + VBKPRCH_HMD;
+			tc_hsblnk = HPIXELS_HMD - 12'd1;
+			tc_hssync = HPIXELS_HMD - 12'd1 + HFNPRCH_HMD;
+			tc_hesync = HPIXELS_HMD - 12'd1 + HFNPRCH_HMD + HSYNCPW_HMD;
+			tc_heblnk = HPIXELS_HMD - 12'd1 + HFNPRCH_HMD + HSYNCPW_HMD + HBKPRCH_HMD;
+			tc_vsblnk =  VLINES_HMD - 12'd1;
+			tc_vssync =  VLINES_HMD - 12'd1 + VFNPRCH_HMD;
+			tc_vesync =  VLINES_HMD - 12'd1 + VFNPRCH_HMD + VSYNCPW_HMD;
+			tc_veblnk =  VLINES_HMD - 12'd1 + VFNPRCH_HMD + VSYNCPW_HMD + VBKPRCH_HMD;
 		end
 		SW_XGA : begin
 			hvsync_polarity = 1'b1;
 
-			tc_hsblnk = HPIXELS_XGA - 11'd1;
-			tc_hssync = HPIXELS_XGA - 11'd1 + HFNPRCH_XGA;
-			tc_hesync = HPIXELS_XGA - 11'd1 + HFNPRCH_XGA + HSYNCPW_XGA;
-			tc_heblnk = HPIXELS_XGA - 11'd1 + HFNPRCH_XGA + HSYNCPW_XGA + HBKPRCH_XGA;
-			tc_vsblnk =  VLINES_XGA - 11'd1;
-			tc_vssync =  VLINES_XGA - 11'd1 + VFNPRCH_XGA;
-			tc_vesync =  VLINES_XGA - 11'd1 + VFNPRCH_XGA + VSYNCPW_XGA;
-			tc_veblnk =  VLINES_XGA - 11'd1 + VFNPRCH_XGA + VSYNCPW_XGA + VBKPRCH_XGA;
+			tc_hsblnk = HPIXELS_XGA - 12'd1;
+			tc_hssync = HPIXELS_XGA - 12'd1 + HFNPRCH_XGA;
+			tc_hesync = HPIXELS_XGA - 12'd1 + HFNPRCH_XGA + HSYNCPW_XGA;
+			tc_heblnk = HPIXELS_XGA - 12'd1 + HFNPRCH_XGA + HSYNCPW_XGA + HBKPRCH_XGA;
+			tc_vsblnk =  VLINES_XGA - 12'd1;
+			tc_vssync =  VLINES_XGA - 12'd1 + VFNPRCH_XGA;
+			tc_vesync =  VLINES_XGA - 12'd1 + VFNPRCH_XGA + VSYNCPW_XGA;
+			tc_veblnk =  VLINES_XGA - 12'd1 + VFNPRCH_XGA + VSYNCPW_XGA + VBKPRCH_XGA;
 		end
 	endcase
 end
@@ -195,16 +229,16 @@ end
 //
 wire progdone, progen, progdata;
 dcmspi dcmspi_0 (
-  .RST(switch),          //Synchronous Reset
-  .PROGCLK(clk50m_bufg), //SPI clock
-  .PROGDONE(progdone),   //DCM is ready to take next command
-  .DFSLCKD(pclk_lckd),
-  .M(pclk_M),            //DCM M value
-  .D(pclk_D),            //DCM D value
-  .GO(gopclk),           //Go programme the M and D value into DCM(1 cycle pulse)
-  .BUSY(busy),
-  .PROGEN(progen),       //SlaveSelect,
-  .PROGDATA(progdata)    //CommandData
+	.RST(switch),          //Synchronous Reset
+	.PROGCLK(clk50m_bufg), //SPI clock
+	.PROGDONE(progdone),   //DCM is ready to take next command
+	.DFSLCKD(pclk_lckd),
+	.M(pclk_M),            //DCM M value
+	.D(pclk_D),            //DCM D value
+	.GO(gopclk),           //Go programme the M and D value into DCM(1 cycle pulse)
+	.BUSY(busy),
+	.PROGEN(progen),       //SlaveSelect,
+	.PROGDATA(progdata)    //CommandData
 );
 
 //
@@ -212,23 +246,23 @@ dcmspi dcmspi_0 (
 //
 wire          clkfx;
 DCM_CLKGEN #(
-  .CLKFX_DIVIDE (21),
-  .CLKFX_MULTIPLY (31),
-  .CLKIN_PERIOD(20.000)
+	.CLKFX_DIVIDE (21),
+	.CLKFX_MULTIPLY (31),
+	.CLKIN_PERIOD(20.000)
 )
 PCLK_GEN_INST (
-  .CLKFX(clkfx),
-  .CLKFX180(),
-  .CLKFXDV(),
-  .LOCKED(pclk_lckd),
-  .PROGDONE(progdone),
-  .STATUS(),
-  .CLKIN(clk50m),
-  .FREEZEDCM(1'b0),
-  .PROGCLK(clk50m_bufg),
-  .PROGDATA(progdata),
-  .PROGEN(progen),
-  .RST(1'b0)
+	.CLKFX(clkfx),
+	.CLKFX180(),
+	.CLKFXDV(),
+	.LOCKED(pclk_lckd),
+	.PROGDONE(progdone),
+	.STATUS(),
+	.CLKIN(clk50m),
+	.FREEZEDCM(1'b0),
+	.PROGCLK(clk50m_bufg),
+	.PROGDATA(progdata),
+	.PROGEN(progen),
+	.RST(1'b0)
 );
 
 
@@ -275,11 +309,24 @@ PLL_BASE # (
 wire serdesstrobe;
 wire bufpll_lock;
 wire reset;
-BUFPLL #(.DIVIDE(5)) ioclk_buf (.PLLIN(pllclk0), .GCLK(pclkx2), .LOCKED(pll_lckd),
-         .IOCLK(pclkx10), .SERDESSTROBE(serdesstrobe), .LOCK(bufpll_lock));
-synchro #(.INITIALIZE("LOGIC1"))
-synchro_reset (.async(!pll_lckd),.sync(reset),.clk(pclk));
+BUFPLL #(
+	.DIVIDE(5)
+) ioclk_buf (
+	.PLLIN(pllclk0), 
+	.GCLK(pclkx2), 
+	.LOCKED(pll_lckd),
+	.IOCLK(pclkx10), 
+	.SERDESSTROBE(serdesstrobe), 
+	.LOCK(bufpll_lock)
+);
 
+synchro #(
+	.INITIALIZE("LOGIC1")
+) synchro_reset (
+	.async(!pll_lckd),
+	.sync(reset),
+	.clk(pclk)
+);
 
 wire VGA_HSYNC_INT, VGA_VSYNC_INT;
 wire   [10:0] bgnd_hcount;
@@ -291,22 +338,22 @@ wire          bgnd_vblnk;
 
 
 timing timing_inst (
-    .tc_hsblnk(tc_hsblnk), //input
-    .tc_hssync(tc_hssync), //input
-    .tc_hesync(tc_hesync), //input
-    .tc_heblnk(tc_heblnk), //input
-    .hcount(bgnd_hcount), //output
-    .hsync(VGA_HSYNC_INT), //output
-    .hblnk(bgnd_hblnk), //output
-    .tc_vsblnk(tc_vsblnk), //input
-    .tc_vssync(tc_vssync), //input
-    .tc_vesync(tc_vesync), //input
-    .tc_veblnk(tc_veblnk), //input
-    .vcount(bgnd_vcount), //output
-    .vsync(VGA_VSYNC_INT), //output
-    .vblnk(bgnd_vblnk), //output
-    .restart(reset),
-    .clk(pclk)
+	.tc_hsblnk ( tc_hsblnk     ), //input
+	.tc_hssync ( tc_hssync     ), //input
+	.tc_hesync ( tc_hesync     ), //input
+	.tc_heblnk ( tc_heblnk     ), //input
+	.hcount    ( bgnd_hcount   ), //output
+	.hsync     ( VGA_HSYNC_INT ), //output
+	.hblnk     ( bgnd_hblnk    ), //output
+	.tc_vsblnk ( tc_vsblnk     ), //input
+	.tc_vssync ( tc_vssync     ), //input
+	.tc_vesync ( tc_vesync     ), //input
+	.tc_veblnk ( tc_veblnk     ), //input
+	.vcount    ( bgnd_vcount   ), //output
+	.vsync     ( VGA_VSYNC_INT ), //output
+	.vblnk     ( bgnd_vblnk    ), //output
+	.restart   ( reset         ),
+	.clk       ( pclk          )
 );
 
 /////////////////////////////////////////
@@ -324,7 +371,7 @@ always @ (posedge pclk) begin
 	vsync <= VGA_VSYNC_INT ^ hvsync_polarity ;
 	VGA_HSYNC <= hsync;
 	VGA_VSYNC <= vsync;
-	
+
 	active_q <= active;
 	de <= active_q;
 end
@@ -343,46 +390,57 @@ wire [7:0] blue_data   = (SW[0]) ? hdc_blue  : bf_blue;
   // DVI Encoder
   ////////////////////////////////////////////////////////////////
 dvi_encoder_top enc0 (
-	.pclk        (pclk),
-	.pclkx2      (pclkx2),
-	.pclkx10     (pclkx10),
-	.serdesstrobe(serdesstrobe),
-	.rstin       (reset),
-	.blue_din    (blue_data),
-	.green_din   (green_data),
-	.red_din     (red_data),
-	.aux0_din        (4'd0),
-	.aux1_din        (4'd0),
-	.aux2_din        (4'd0),
-	.hsync       (VGA_HSYNC),
-	.vsync       (VGA_VSYNC),
-	.vde         (de),
-	.ade         (1'b0),
-	.TMDS        (TMDS),
-	.TMDSB       (TMDSB));
+	.pclk         ( pclk         ),
+	.pclkx2       ( pclkx2       ),
+	.pclkx10      ( pclkx10      ),
+	.serdesstrobe ( serdesstrobe ),
+	.rstin        ( reset        ),
+	.blue_din     ( blue_data    ),
+	.green_din    ( green_data   ),
+	.red_din      ( red_data     ),
+	.aux0_din     ( 4'd0         ),
+	.aux1_din     ( 4'd0         ),
+	.aux2_din     ( 4'd0         ),
+	.hsync        ( VGA_HSYNC    ),
+	.vsync        ( VGA_VSYNC    ),
+	.vde          ( de           ),
+	.ade          ( 1'b0         ),
+	.TMDS         ( TMDS         ),
+	.TMDSB        ( TMDSB        )
+);
 `ifdef EXTEND
 
 wire pclk1x10, serdesstrobe1,bufpll_lock1;
-BUFPLL #(.DIVIDE(5)) ioclk1_buf (.PLLIN(pllclk0), .GCLK(pclkx2), .LOCKED(pll_lckd),
-         .IOCLK(pclk1x10), .SERDESSTROBE(serdesstrobe1), .LOCK(bufpll_lock1));
+BUFPLL #(
+	.DIVIDE(5)
+) ioclk1_buf (
+	.PLLIN(pllclk0), 
+	.GCLK(pclkx2), 
+	.LOCKED(pll_lckd),
+	.IOCLK(pclk1x10), 
+	.SERDESSTROBE(serdesstrobe1), 
+	.LOCK(bufpll_lock1)
+);
+
 dvi_encoder_top enc1 (
-	.pclk        (pclk),
-	.pclkx2      (pclkx2),
-	.pclkx10     (pclk1x10),
-	.serdesstrobe(serdesstrobe1),
-	.rstin       (reset),
-	.blue_din    (blue_data),
-	.green_din   (green_data),
-	.red_din     (red_data),
-	.aux0_din        (4'd0),
-	.aux1_din        (4'd0),
-	.aux2_din        (4'd0),
-	.hsync       (VGA_HSYNC),
-	.vsync       (VGA_VSYNC),
-	.vde         (de),
-	.ade         (1'b0),
-	.TMDS        (ETMDS),
-	.TMDSB       (ETMDSB));
+	.pclk         ( pclk         ),
+	.pclkx2       ( pclkx2       ),
+	.pclkx10      ( pclk1x10     ),
+	.serdesstrobe ( serdesstrobe1),
+	.rstin        ( reset        ),
+	.blue_din     ( blue_data    ),
+	.green_din    ( green_data   ),
+	.red_din      ( red_data     ),
+	.aux0_din     ( 4'd0         ),
+	.aux1_din     ( 4'd0         ),
+	.aux2_din     ( 4'd0         ),
+	.hsync        ( VGA_HSYNC    ),
+	.vsync        ( VGA_VSYNC    ),
+	.vde          ( de           ),
+	.ade          ( 1'b0         ),
+	.TMDS         ( ETMDS        ),
+	.TMDSB        ( ETMDSB       )
+);
 `endif
 
 hdcolorbar clrbar(
@@ -399,16 +457,16 @@ hdcolorbar clrbar(
 
 /* --------------- EDID instance ---------------- */
 i2c_edid edid0_inst (
-   .clk(clk100),
-   .rst(~RSTBTN_),
-   .scl(RX0_SCL),
-   .sda(RX0_SDA)
+	.clk(clk100),
+	.rst(~RSTBTN_),
+	.scl(RX0_SCL),
+	.sda(RX0_SDA)
 );
 i2c_edid edid1_inst (
-   .clk(clk100),
-   .rst(~RSTBTN_),
-   .scl(RX1_SCL),
-   .sda(RX1_SDA)
+	.clk(clk100),
+	.rst(~RSTBTN_),
+	.scl(RX1_SCL),
+	.sda(RX1_SDA)
 );
 
 /* --------------- Decoder Port0 ---------------- */
