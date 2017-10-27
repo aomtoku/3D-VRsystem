@@ -3,7 +3,7 @@
 module top (
 	input  wire                        SYS_CLK,
 	input  wire                        RSTBTN_,
-	input  wire                  [3:0] SW,
+	input  wire                  [4:0] SW,
 	input  wire                        BSW,
 	input  wire                  [3:0] RX0_TMDS,
 	input  wire                  [3:0] RX0_TMDSB,
@@ -340,10 +340,10 @@ synchro #(
 );
 
 wire VGA_HSYNC_INT, VGA_VSYNC_INT;
-wire   [10:0] bgnd_hcount;
+wire   [11:0] bgnd_hcount;
 wire          bgnd_hsync;
 wire          bgnd_hblnk;
-wire   [10:0] bgnd_vcount;
+wire   [11:0] bgnd_vcount;
 wire          bgnd_vsync;
 wire          bgnd_vblnk;
 
@@ -434,23 +434,23 @@ BUFPLL #(
 );
 
 dvi_encoder_top enc1 (
-	.pclk         ( pclk         ),
-	.pclkx2       ( pclkx2       ),
-	.pclkx10      ( pclk1x10     ),
-	.serdesstrobe ( serdesstrobe1),
-	.rstin        ( reset        ),
-	.blue_din     ( blue_data    ),
-	.green_din    ( green_data   ),
-	.red_din      ( red_data     ),
-	.aux0_din     ( 4'd0         ),
-	.aux1_din     ( 4'd0         ),
-	.aux2_din     ( 4'd0         ),
-	.hsync        ( VGA_HSYNC    ),
-	.vsync        ( VGA_VSYNC    ),
-	.vde          ( de           ),
-	.ade          ( 1'b0         ),
-	.TMDS         ( ETMDS        ),
-	.TMDSB        ( ETMDSB       )
+	.pclk         ( pclk          ),
+	.pclkx2       ( pclkx2        ),
+	.pclkx10      ( pclk1x10      ),
+	.serdesstrobe ( serdesstrobe1 ),
+	.rstin        ( reset         ),
+	.blue_din     ( blue_data     ),
+	.green_din    ( green_data    ),
+	.red_din      ( red_data      ),
+	.aux0_din     ( 4'd0          ),
+	.aux1_din     ( 4'd0          ),
+	.aux2_din     ( 4'd0          ),
+	.hsync        ( VGA_HSYNC     ),
+	.vsync        ( VGA_VSYNC     ),
+	.vde          ( de            ),
+	.ade          ( 1'b0          ),
+	.TMDS         ( ETMDS         ),
+	.TMDSB        ( ETMDSB        )
 );
 `endif
 
