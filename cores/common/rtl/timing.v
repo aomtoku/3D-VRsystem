@@ -49,56 +49,55 @@
 
 `timescale 1 ns / 1 ps
 
-module timing
-  (
-  input  wire [10:0] tc_hsblnk,
-  input  wire [10:0] tc_hssync,
-  input  wire [10:0] tc_hesync,
-  input  wire [10:0] tc_heblnk,
-
-  output wire [10:0] hcount,
-  output wire        hsync,
-  output wire        hblnk,
-
-  input  wire [10:0] tc_vsblnk,
-  input  wire [10:0] tc_vssync,
-  input  wire [10:0] tc_vesync,
-  input  wire [10:0] tc_veblnk,
-
-  output wire [10:0] vcount,
-  output wire        vsync,
-  output wire        vblnk,
-
-  input  wire        restart,
-  input  wire        clk
-  );
+module timing (
+	input  wire [11:0] tc_hsblnk,
+	input  wire [11:0] tc_hssync,
+	input  wire [11:0] tc_hesync,
+	input  wire [11:0] tc_heblnk,
+	
+	output wire [11:0] hcount,
+	output wire        hsync,
+	output wire        hblnk,
+	
+	input  wire [11:0] tc_vsblnk,
+	input  wire [11:0] tc_vssync,
+	input  wire [11:0] tc_vesync,
+	input  wire [11:0] tc_veblnk,
+	
+	output wire [11:0] vcount,
+	output wire        vsync,
+	output wire        vblnk,
+	
+	input  wire        restart,
+	input  wire        clk
+);
 
   //******************************************************************//
   // This logic describes a 11-bit horizontal position counter.       //
   //******************************************************************//
  
-  reg    [10:0] hpos_cnt = 0;
+  reg    [11:0] hpos_cnt = 0;
   wire          hpos_clr;
   wire          hpos_ena;
 
   always @(posedge clk)
   begin : hcounter
-    if (hpos_clr) hpos_cnt <= 11'b000_0000_0000;
-    else if (hpos_ena) hpos_cnt <= hpos_cnt + 11'b000_0000_0001;
+    if (hpos_clr) hpos_cnt <= 12'b0000_0000_0000;
+    else if (hpos_ena) hpos_cnt <= hpos_cnt + 12'b0000_0000_0001;
   end
 
   //******************************************************************//
   // This logic describes a 11-bit vertical position counter.         //
   //******************************************************************//
 
-  reg    [10:0] vpos_cnt = 0;
+  reg    [11:0] vpos_cnt = 0;
   wire          vpos_clr;
   wire          vpos_ena;
 
   always @(posedge clk)
   begin : vcounter
-    if (vpos_clr) vpos_cnt <= 11'b000_0000_0000;
-    else if (vpos_ena) vpos_cnt <= vpos_cnt + 11'b000_0000_0001;
+    if (vpos_clr) vpos_cnt <= 12'b0000_0000_0000;
+    else if (vpos_ena) vpos_cnt <= vpos_cnt + 12'b0000_0000_0001;
   end
 
   //******************************************************************//
