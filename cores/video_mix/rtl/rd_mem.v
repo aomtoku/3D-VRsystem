@@ -118,7 +118,7 @@ wire              frame2      = brstcnt[0];
 wire              frame3      = brstcnt[1]/*todo*/;
 wire              frame       = (mode == SW_HMD)  ? frame1 : 
                                 (mode == SW_XGA)  ? frame2 :
-                                (mode == SW_FHD)  ? frame3 : 0;
+                                (mode == SW_FHD)  ? frame3 :
                                 (mode == SW_720P) ? frame3 : 0;
 
 `ifdef RGB
