@@ -30,6 +30,7 @@ module mixer #(
 	input  wire [7:0] ig1,
 	input  wire [7:0] ib1,
 	/* Output port for Ethernet */
+	input  wire       polarity,
 	input  wire [1:0] mode,
 	input  wire       opclk,
 	input  wire       oserdes_rst,
@@ -111,6 +112,7 @@ wire                            user_CLKDVi, c3_clk0, MClkFB, Mclk0;
 wire                            mcb_clkfx_in, clk200outx, DcmLock, clkdv;
 wire                            c3_calib_done, c3_rst0;
 wire                            clkmem = c3_clk0;
+wire                            mem_rst = c3_rst0;
 
 wire                            p0_cmd_en       , wr_cmd_en   , rd_cmd_en;
 wire                      [2:0] p0_cmd_instr    , wr_cmd_instr, rd_cmd_instr;
@@ -363,7 +365,7 @@ wire t1 = {tr1, trr1} == 2'b01;
 reg testpr, perr, full;
 // Arbiter
 always @ (posedge clkmem) begin
-	if (vrst) begin
+	if (mem_rst) begin
 		darv      <= 2'd0; arb_state <= 2'd0;
 		shiftcnt0 <= 8'd0; shiftcnt1 <= 8'd0;
 		trr0      <= 1'd0; tr0       <= 1'd0;
@@ -371,6 +373,13 @@ always @ (posedge clkmem) begin
 		testpr    <= 1'd0; perr      <= 1'd0;
 		//full      <= 1'd0;
 	end else begin
+		if (vrst) begin
+			darv      <= 2'd0; arb_state <= 2'd0;
+			shiftcnt0 <= 8'd0; shiftcnt1 <= 8'd0;
+			trr0      <= 1'd0; tr0       <= 1'd0;
+			trr1      <= 1'd0; tr1       <= 1'd0;
+			testpr    <= 1'd0; perr      <= 1'd0;
+		end
 		tr0 <= trig0; trr0 <= tr0;
 		tr1 <= trig1; trr1 <= tr1;
 	
@@ -417,29 +426,28 @@ wire [1:0] xpos0 = hcnt0[10:9];
 wire [1:0] xpos1 = hcnt1[10:9];
 
 line_fifo inst_lfifo0 ( // 24bit x 1024 {12'hcnt, 12'vcnt}
-	.rst   (vrst|bsw)       ,
-	.wr_clk(pclk0)      ,
-	.rd_clk(clkmem)     ,  
-	.din   ({113'd0, fin0, xpos0, vcnt0})  ,
-	.wr_en (wr_fifo_en0||dummy_en0),
-	.rd_en (rd_fifo_en0),
-	.dout  (linefd0)    ,
-	.full  (lfull0)     ,
-	.empty (lempty0)
+	.rst   ( vrst || bsw || mem_rst ),
+	.wr_clk( pclk0      ),
+	.rd_clk( clkmem     ),  
+	.din   ({113'd0, fin0, xpos0, vcnt0}),
+	.wr_en ( wr_fifo_en0 || dummy_en0   ),
+	.rd_en ( rd_fifo_en0),
+	.dout  ( linefd0    ),
+	.full  ( lfull0     ),
+	.empty ( lempty0    )
 );
 
 line_fifo inst_lfifo1 (
-	.rst   (vrst|bsw)       ,
-	.wr_clk(pclk1)      ,
-	.rd_clk(clkmem)     ,  
+	.rst   ( vrst || bsw || mem_rst ),
+	.wr_clk( pclk1        ),
+	.rd_clk( clkmem       ),  
 	.din   ({113'd0, fin1, xpos1, vcnt1}),
-	.wr_en (wr_fifo_en1||dummy_en1),
-	.rd_en (rd_fifo_en1),
-	.dout  (linefd1)    ,
-	.full  (lfull1)     ,
-	.empty (lempty1)
+	.wr_en ( wr_fifo_en1||dummy_en1),
+	.rd_en ( rd_fifo_en1  ),
+	.dout  ( linefd1      ),
+	.full  ( lfull1       ),
+	.empty ( lempty1      )
 );
-
 
 wire  [11:0] linecnt  = (sel == SEL_PORT0) ? line0  : line1;
 wire  [ 1:0] pxlcnt   = (sel == SEL_PORT0) ? pxl0   : pxl1; 
@@ -468,6 +476,7 @@ wire [7:0]debug1;
 wr_mem inst_wrp0 (
 	.debug        (debug1)       ,
 	/* Dram Controller pins */ 
+	.mem_rst      (mem_rst)      ,
 	.calib_done   (c3_calib_done),
 	.cmd_clk      (clkmem)       ,
 	.cmd_en       (wr_cmd_en)    ,
@@ -499,6 +508,7 @@ wr_mem inst_wrp0 (
 wire [7:0]debug2;
 rd_mem inst_rdmem (
 	.debug            (debug2)             ,
+	.polarity         (polarity)           ,
 	.mode             (mode)               ,
 	.pclk             (opclk)              ,
 	.rst              (vrst|~c3_calib_done),
@@ -513,6 +523,7 @@ rd_mem inst_rdmem (
 	.memcon_en        (memcon_en)          ,
 	.memcon_donep     (memcon_done)        ,
 	.memclk           (clkmem)             ,
+	.mem_rst          (mem_rst)            ,
 	.mcb_rd_en        (p0_rd_en)           ,
 	.mcb_rd_data      (p0_rd_data)         ,
 	.mcb_rd_full      (p0_rd_full)         ,
@@ -528,7 +539,7 @@ rd_mem inst_rdmem (
 
 reg regfull0, regfull1;
 always @ (posedge clkmem)
-	if (rst|bsw) begin
+	if (rst||mem_rst||bsw) begin
 		regfull0 <= 0;
 		regfull1 <= 0;
 	end else begin

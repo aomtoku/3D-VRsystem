@@ -130,8 +130,13 @@ localparam SW_XGA = 2'd1;
 localparam SW_FHD = 2'd2;
 localparam SW_720P = 2'd3;
 
-reg [7:0] pclk_M, pclk_D;
 
+
+//wire [7:0] pclk_M = 8'd248 - 8'd1;
+//wire [7:0] pclk_D = 8'd167 - 8'd1;
+
+
+reg [7:0] pclk_M, pclk_D;
 always @ (posedge clk50m_bufg) begin
 	if(switch) begin
 		case(sws_sync_q)
@@ -200,6 +205,17 @@ localparam HFNPRCH_XGA = 12'd24;   //Horizontal Front Portch
 localparam VFNPRCH_XGA = 12'd3;    //Vertical Front Portch
 localparam HBKPRCH_XGA = 12'd160;  //Horizontal Front Portch
 localparam VBKPRCH_XGA = 12'd29;   //Vertical Front Portch
+
+//wire [11:0] tc_hsblnk  = HPIXELS_720P - 12'd1;                                             
+//wire [11:0] tc_hssync  = HPIXELS_720P - 12'd1 + HFNPRCH_720P;                              
+//wire [11:0] tc_hesync  = HPIXELS_720P - 12'd1 + HFNPRCH_720P + HSYNCPW_720P;               
+//wire [11:0] tc_heblnk  = HPIXELS_720P - 12'd1 + HFNPRCH_720P + HSYNCPW_720P + HBKPRCH_720P;
+//wire [11:0] tc_vsblnk  =  VLINES_720P - 12'd1;                                             
+//wire [11:0] tc_vssync  =  VLINES_720P - 12'd1 + VFNPRCH_720P;                              
+//wire [11:0] tc_vesync  =  VLINES_720P - 12'd1 + VFNPRCH_720P + VSYNCPW_720P;               
+//wire [11:0] tc_veblnk  =  VLINES_720P - 12'd1 + VFNPRCH_720P + VSYNCPW_720P + VBKPRCH_720P;
+//wire hvsync_polarity   = 1'b0;
+
 
 reg [11:0] tc_hsblnk ;
 reg [11:0] tc_hssync ;
@@ -750,6 +766,7 @@ mixer inst_mixer (
 	.ig1             (rx1_green) ,
 	.ib1             (rx1_blue)  ,
 	/* Output port for Ethernet */
+	.polarity        (hvsync_polarity),
 	.mode            (sws_clk_sync),
 	.opclk           (pclk)      ,
 	.oserdes_rst     (serdes_rst),

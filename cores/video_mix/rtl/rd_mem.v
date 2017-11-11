@@ -3,6 +3,7 @@ module rd_mem #(
 	parameter PWIDTH =  16
 ) (
 	output wire        [7:0] debug,   
+	input  wire              polarity,
 	input  wire        [1:0] mode,
 	input  wire              pclk,
 	input  wire              rst,
@@ -18,6 +19,7 @@ module rd_mem #(
 	input  wire        [1:0] arb_state,
 
 	input  wire              memclk,
+	input  wire              mem_rst,
 	output wire              mcb_rd_en,
 	input  wire [DWIDTH-1:0] mcb_rd_data,
 	input  wire              mcb_rd_full,
@@ -64,8 +66,8 @@ localparam BRST_NUM_XGA  =   4;
 localparam BRST_LEN_FHD  =  60;
 localparam BRST_NUM_FHD  =   4;
 
-localparam BRST_LEN_720P  =  40;
-localparam BRST_NUM_720P  =   4;
+localparam BRST_LEN_720P =  40;
+localparam BRST_NUM_720P =   4;
 
 localparam DEPTH_HMD     =  900;
 localparam DEPTH_XGA     =  768;
@@ -115,11 +117,10 @@ wire              fifo_wr_en = (state == DATA) && ~mcb_rd_empty;
 wire              fifo_rd_en = de && cnt8 == 3'd0;
 wire              frame1      = brstcnt[1];
 wire              frame2      = brstcnt[0];
-wire              frame3      = brstcnt[1]/*todo*/;
 wire              frame       = (mode == SW_HMD)  ? frame1 : 
                                 (mode == SW_XGA)  ? frame2 :
-                                (mode == SW_FHD)  ? frame3 :
-                                (mode == SW_720P) ? frame3 : 0;
+                                (mode == SW_FHD)  ? frame1 :
+                                (mode == SW_720P) ? frame1 : 0;
 
 `ifdef RGB
 wire [7:0] llred, llgreen, llblue;
@@ -140,7 +141,7 @@ assign ored   = pxl_out[15:8];
 assign ogreen = pxl_out[ 7:0];
 assign oblue  = 0;
 `endif
-assign memcon_donep = done > 0 || memcon_done;
+assign memcon_donep = done != 4'd0 || memcon_done;
 
 /* ------------------------------------------- */
 
@@ -163,15 +164,15 @@ always @ (posedge pclk)
 //`define LINE2
 
 always @ (posedge memclk) begin
-	if (rst) begin
-		state       <= IDLE;   done        <= 1'b0;
+	if (mem_rst) begin
+		state       <= IDLE;   done        <= 4'd0;
 		cmd_en      <= 1'b0;   rd_en       <= 1'b0;
 		cntr        <= 8'd0;   cmd_byte    <=30'd0;
 		brstcnt     <= 8'd0;   memcon_done <= 1'b0;
 		brst_cnt_p  <=13'd0;   linecnt     <=11'd0;
 	end else begin
 		done    <= {done[2:0], memcon_done};
-		vs_buf  <= vs; vs_buff <= vs_buf;
+		vs_buf  <= (polarity) ? vs : ~vs; vs_buff <= vs_buf;
 		if (~vs_buff) linecnt    <= 0;
 		case (state)
 			IDLE : begin
@@ -205,11 +206,17 @@ always @ (posedge memclk) begin
 							brst_cnt_p <= 13'd1024;
 						end
 					end else if (mode == SW_FHD) begin
-						if (brstcnt[0] == 1/*todo*/)
+						if (brstcnt[0] == 1/*todo*/) begin
+							brst_cnt_p <= 13'd0;
+						end else begin
 							brst_cnt_p <= 13'd960;
+						end
 					end else if (mode == SW_720P) begin
-						if (brstcnt[0] == 1)
+						if (brstcnt[0] == 1) begin
+							brst_cnt_p <= 13'd0;
+						end else begin
 							brst_cnt_p <= 13'd640;
+						end
 					end
 				end
 			end
@@ -231,7 +238,7 @@ always @ (posedge memclk) begin
 					brstcnt     <= 8'd0;
 					memcon_done <= 1'b1;
 					state       <= IDLE;
-				end else if (cntr > BRST_INTERVAL) begin
+				end else if (cntr != BRST_INTERVAL) begin
 					state <= ISSUE;
 				end else begin
 					cntr <= cntr + 8'd1;
@@ -249,15 +256,15 @@ wire rd_en_f = (mode == SW_HMD)  ? fifo_wr_en :
                (mode == SW_720P) ? fifo_wr_en : 0;
 
 wr_fifo4line rd_fifo (
-	.rst    (rst)         ,
-	.wr_clk (memclk)      ,
-	.rd_clk (pclk)        ,
-	.din    (mcb_rd_data) ,
-	.wr_en  (rd_en_f)  ,
-	.rd_en  (fifo_rd_en)  ,
-	.dout   (dout)        ,
-	.full   (fifo_full)   ,
-	.empty  (fifo_empty)
+	.rst    ( rst||mem_rst ),
+	.wr_clk ( memclk       ),
+	.rd_clk ( pclk         ),
+	.din    ( mcb_rd_data  ),
+	.wr_en  ( rd_en_f      ),
+	.rd_en  ( fifo_rd_en   ),
+	.dout   ( dout         ),
+	.full   ( fifo_full    ),
+	.empty  ( fifo_empty   )
 );
 
 assign rd_fifo_empty = fifo_empty;
@@ -277,4 +284,45 @@ ll151d inst_ll151d (
 	.rst   (rst)
 );
 
+
+reg [29:0] addr_reg;
+reg        cmd_en_reg;
+reg [2:0]  state_reg;
+reg [7:0]  brstcnt_reg;
+reg        full_reg;
+reg [10:0] linecnt_reg;
+reg [10:0] linedepth_reg;
+
+always @ (posedge memclk) begin
+	if (mem_rst) begin
+		addr_reg    <= 0;
+		cmd_en_reg  <= 0;
+		state_reg   <= 0;
+		brstcnt_reg <= 0;
+		full_reg    <= 0;
+		linecnt_reg <= 0;
+		linedepth_reg <= 0;
+	end else begin
+		addr_reg    <= cmd_byte;
+		cmd_en_reg  <= cmd_en;
+		state_reg   <= state;
+		brstcnt_reg <= brstcnt;
+		full_reg    <= fifo_full;
+		linecnt_reg <= linecnt;
+		linedepth_reg <= linedepth;
+	end
+end
+
+//
+//wire [35:0] control0;
+//chipscope_icon u_icon (
+//	.CONTROL0 (control0)
+//);
+//
+//chipscope_ila u_ila(
+//	.CONTROL   ( control0 ),
+//	.CLK       ( memclk ),
+//	.TRIG0     ( {linedepth_reg, linecnt_reg, brstcnt_reg, state_reg, cmd_en_reg, addr_reg} )
+//);
+//
 endmodule

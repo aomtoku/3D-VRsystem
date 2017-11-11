@@ -2,6 +2,7 @@ module wr_mem (
 	output wire   [7:0] debug        ,
 	/* Dram Controller pins */
 	input  wire         calib_done   ,
+	input  wire         mem_rst      ,
 	input  wire         cmd_clk      ,
 	output reg          cmd_en       ,
 	output wire   [2:0] cmd_instr    ,
@@ -63,64 +64,66 @@ wire doneg = doner || donebb;
 assign wr_fifo_rd_en= wr_eng &&( ~(state == WAIT && idata[128]) || (wr_cnt != 0 && state == WRD));
 
 always @ (posedge cmd_clk) begin
-	if (rst | ~calib_done) begin
+	if (mem_rst) begin
 		state     <=  IDLE;  wr_cnt    <=  7'd0;
 		line      <= 11'd0; 
 		cmd_en    <=  1'd0;  cmd_b     <= 13'd0;
 		doneb     <=  1'd0;  donebb    <=  1'd0;
 		doner     <=  1'd0;  wr_eng    <=  1'd0;
 	end else begin
-		doneb  <= {doneb[0], donebb};
-		donebb <= doner;
-		case(state)
-			IDLE : begin
-				if (wr_probe && ~doneg && wr_empty) begin
-					state <= WAIT;
-				end
-				wr_cnt  <= 7'd0;
-				cmd_en  <= 1'b0;
-				cmd_b   <= 13'd1024;
-				doner   <= 1'b0;
-				cmd_addr<= 30'd0;
-			end 
-			WAIT : begin
-				if (idata[128] == 1'b0) begin
-					wr_eng <= 1'b1;
-				end else begin
-					wr_eng <= 1'b0;
-					state  <= WRD;
-				end
-			end
-			WRD  : begin
-				cmd_en <= 1'b0;
-				if (~wr_full && wr_count <= 7'd64) begin
-					if (wr_cnt == 7'd64) begin
-						state   <= CMD;
-						wr_eng  <= 1'b0;
-					end else begin
-						if (wr_cnt == 7'd2 && idata[128] == 1'b1) begin
-							line <= cline[10:0];
-							case(cpxl[0])
-								1'b0 : cmd_b <= 13'd0;
-								1'b1 : cmd_b <= 13'd1024;
-							endcase
-						end
-						wr_cnt  <= wr_cnt + 7'd1;
-						wr_eng  <= 1'b1;
+		if (calib_done) begin
+			doneb  <= {doneb[0], donebb};
+			donebb <= doner;
+			case(state)
+				IDLE : begin
+					if (wr_probe && ~doneg && wr_empty) begin
+						state <= WAIT;
 					end
-				end else wr_eng <= 1'b0;
-			end
-			CMD  : begin
-				wr_cnt        <= 7'd0;
-				if (~cmd_full && arb_state == 2'b10 && wr_count == 7'd64) begin
-					cmd_en      <= 1'b1;
-					cmd_addr    <= {5'd0, csel, line, cmd_b};
-					state       <= IDLE;
-					doner       <= 1'b1;
+					wr_cnt  <= 7'd0;
+					cmd_en  <= 1'b0;
+					cmd_b   <= 13'd1024;
+					doner   <= 1'b0;
+					cmd_addr<= 30'd0;
+				end 
+				WAIT : begin
+					if (idata[128] == 1'b0) begin
+						wr_eng <= 1'b1;
+					end else begin
+						wr_eng <= 1'b0;
+						state  <= WRD;
+					end
 				end
-			end
-			default : state <= IDLE;
-		endcase
+				WRD  : begin
+					cmd_en <= 1'b0;
+					if (~wr_full && wr_count <= 7'd64) begin
+						if (wr_cnt == 7'd64) begin
+							state   <= CMD;
+							wr_eng  <= 1'b0;
+						end else begin
+							if (wr_cnt == 7'd2 && idata[128] == 1'b1) begin
+								line <= cline[10:0];
+								case(cpxl[0])
+									1'b0 : cmd_b <= 13'd0;
+									1'b1 : cmd_b <= 13'd1024;
+								endcase
+							end
+							wr_cnt  <= wr_cnt + 7'd1;
+							wr_eng  <= 1'b1;
+						end
+					end else wr_eng <= 1'b0;
+				end
+				CMD  : begin
+					wr_cnt        <= 7'd0;
+					if (~cmd_full && arb_state == 2'b10 && wr_count == 7'd64) begin
+						cmd_en      <= 1'b1;
+						cmd_addr    <= {5'd0, csel, line, cmd_b};
+						state       <= IDLE;
+						doner       <= 1'b1;
+					end
+				end
+				default : state <= IDLE;
+			endcase
+		end
 	end
 end
 
