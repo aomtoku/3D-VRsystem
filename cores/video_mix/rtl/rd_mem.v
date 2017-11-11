@@ -1,4 +1,6 @@
 module rd_mem #(
+	parameter DISP_HSTART = 0,
+	parameter DISP_VSTART = 0,
 	parameter DWIDTH = 128,
 	parameter PWIDTH =  16
 ) (
@@ -43,6 +45,8 @@ localparam IDLE          =   3'd0,
            CMD           =   3'd2,
            DATA          =   3'd3,
            WAIT          =   3'd4;
+
+localparam DISP_HSTART_BYTE = DISP_HSTART * (PWIDTH/8);
 
 localparam READ          =   3'd3;
 
@@ -197,9 +201,9 @@ always @ (posedge memclk) begin
 					brstcnt    <= brstcnt + 8'd1;
 					if (mode == SW_HMD) begin
 						if (brstcnt[0] == 1) begin
-							brst_cnt_p <= 13'd0;
+							brst_cnt_p <= 13'd0 + DISP_HSTART_BYTE;
 						end else begin
-							brst_cnt_p <= 13'd720;
+							brst_cnt_p <= 13'd720 + DISP_HSTART_BYTE;
 						end
 					end else if (mode == SW_XGA) begin 
 						if (brstcnt[1:0] == 2'b01) begin
@@ -207,15 +211,15 @@ always @ (posedge memclk) begin
 						end
 					end else if (mode == SW_FHD) begin
 						if (brstcnt[0] == 1/*todo*/) begin
-							brst_cnt_p <= 13'd0;
+							brst_cnt_p <= 13'd0 + DISP_HSTART_BYTE;
 						end else begin
-							brst_cnt_p <= 13'd960;
+							brst_cnt_p <= 13'd960 + DISP_HSTART_BYTE;
 						end
 					end else if (mode == SW_720P) begin
 						if (brstcnt[0] == 1) begin
-							brst_cnt_p <= 13'd0;
+							brst_cnt_p <= 13'd0 + DISP_HSTART_BYTE;
 						end else begin
-							brst_cnt_p <= 13'd640;
+							brst_cnt_p <= 13'd640 + DISP_HSTART_BYTE;
 						end
 					end
 				end
@@ -230,8 +234,8 @@ always @ (posedge memclk) begin
 			end
 			WAIT : begin
 				if (brstcnt == flipcnt) begin
-					if (linecnt == linedepth) begin
-						linecnt <= 0;
+					if (linecnt == linedepth + DISP_VSTART) begin
+						linecnt <= 0 + DISP_VSTART;
 					end else begin
 						linecnt <= linecnt + 11'd1;
 					end

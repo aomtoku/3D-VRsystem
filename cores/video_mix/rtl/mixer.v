@@ -1,4 +1,7 @@
 module mixer #(
+	parameter DISP_HSTART = 0,
+	parameter DISP_VSTART = 0,
+
 	parameter C3_P0_MASK_SIZE           =                16,
 	parameter C3_P0_DATA_PORT_SIZE      =               128,
 	parameter DEBUG_EN                  =                 0,       
@@ -256,8 +259,13 @@ reg    [7:0] shiftcnt0, shiftcnt1;
 reg  [127:0] tmp0, tmp1;
 
 wire  [11:0] hcnt0, vcnt0, hcnt1, vcnt1;
+wire  [11:0] hcnt0_shft, hcnt1_shft;
 wire [128:0] wrp0_dout, wrp1_dout;
 wire         done, memcon_done;
+
+assign hcnt0_shft = (hcnt0 < DISP_HSTART) ? 12'd0 : hcnt0 - DISP_HSTART;
+assign hcnt1_shft = (hcnt1 < DISP_HSTART) ? 12'd0 : hcnt1 - DISP_HSTART;
+
 
 wire         memcon_en    = read_state == READ_REQ;
 wire   [1:0] sel          = darv;
@@ -268,17 +276,17 @@ wire  [15:0] wrp1_din     = {ig1[7:2], ir1[7:3], ib1[7:3]};
 wire  [15:0] wrp0_din     = {ir0, ig0};
 wire  [15:0] wrp1_din     = {ir1, ig1};
 `endif
-wire         wr_fifo_en0  = de0 && (hcnt0[2:0] == 3'b111) && hcnt0[10] == 1'b0; 
-wire         wr_fifo_en1  = de1 && (hcnt1[2:0] == 3'b111) && hcnt1[10] == 1'b0;
-wire [128:0] fin0         = (hcnt0[2:0] == 3'b111) ? {1'b1, wrp0_din, tmp0[127:16]} : 129'd0;
-wire [128:0] fin1         = (hcnt1[2:0] == 3'b111) ? {1'b1, wrp1_din, tmp1[127:16]} : 129'd0;
+wire         wr_fifo_en0  = de0 && (hcnt0_shft[2:0] == 3'b111) && hcnt0_shft[10] == 1'b0; 
+wire         wr_fifo_en1  = de1 && (hcnt1_shft[2:0] == 3'b111) && hcnt1_shft[10] == 1'b0;
+wire [128:0] fin0         = (hcnt0_shft[2:0] == 3'b111) ? {1'b1, wrp0_din, tmp0[127:16]} : 129'd0;
+wire [128:0] fin1         = (hcnt1_shft[2:0] == 3'b111) ? {1'b1, wrp1_din, tmp1[127:16]} : 129'd0;
 
 reg trig0, trig1;
 always @ (posedge pclk0) begin
 	if (vrst) begin
 		trig0 <= 1'd0;
 	end else begin
-		if (hcnt0[10] == 1'b0 && hcnt0[8:1] == 8'b11111111)
+		if (hcnt0_shft[10] == 1'b0 && hcnt0_shft[8:1] == 8'b11111111)
 			trig0 <= 1'b1;
 		else 
 			trig0 <= 1'b0;
@@ -289,7 +297,7 @@ always @ (posedge pclk1) begin
 	if (vrst) begin
 		trig1 <= 1'd0;
 	end else begin
-		if (hcnt1[10] == 1'b0 && hcnt1[8:1] == 8'b11111111)
+		if (hcnt1_shft[10] == 1'b0 && hcnt1_shft[8:1] == 8'b11111111)
 			trig1 <= 1'b1;
 		else 
 			trig1 <= 1'b0;
@@ -316,9 +324,9 @@ reg dummy_en0, dummy_en1;
 always @ (posedge pclk0)
 	if (vrst) dummy_en0 <= 1'b0;
 	else begin
-        if (hcnt0 >=  12'd1025 && hcnt0 <=  12'd1028)
+        if (hcnt0_shft >=  12'd1025 && hcnt0_shft <=  12'd1028)
 			dummy_en0 <= 1'b1;
-        else if (hcnt0 >= 12'd513 && hcnt0 <= 12'd516)
+        else if (hcnt0_shft >= 12'd513 && hcnt0_shft <= 12'd516)
 			dummy_en0 <= 1'b1;
 		else 
 			dummy_en0 <= 1'b0;
@@ -327,9 +335,9 @@ always @ (posedge pclk0)
 always @ (posedge pclk1)
 	if (vrst) dummy_en1 <= 1'b0;
 	else begin
-        if (hcnt1 >=  12'd1025 && hcnt1 <=  12'd1028)
+		if (hcnt1_shft >= 12'd1025 && hcnt1_shft <=  12'd1028)
 			dummy_en1 <= 1'b1;
-        else if (hcnt1 >= 12'd513 && hcnt1 <= 12'd516)
+		else if (hcnt1_shft >= 12'd513 && hcnt1_shft <= 12'd516)
 			dummy_en1 <= 1'b1;
 		else 
 			dummy_en1 <= 1'b0;
@@ -422,8 +430,8 @@ wire        lfull0, lempty0, lfull1, lempty1;
 assign wrp0_dout = linefd0[142:14];
 assign wrp1_dout = linefd1[142:14];
 
-wire [1:0] xpos0 = hcnt0[10:9]; 
-wire [1:0] xpos1 = hcnt1[10:9];
+wire [1:0] xpos0 = hcnt0_shft[10:9]; 
+wire [1:0] xpos1 = hcnt1_shft[10:9];
 
 line_fifo inst_lfifo0 ( // 24bit x 1024 {12'hcnt, 12'vcnt}
 	.rst   ( vrst || bsw || mem_rst ),
@@ -473,7 +481,10 @@ pcnt inst_pcnt1 (
 );
 wire [7:0]debug1;
 
-wr_mem inst_wrp0 (
+wr_mem #(
+	.DISP_HSTART ( DISP_HSTART ),
+	.DISP_VSTART ( DISP_VSTART )
+) inst_wrp0 (
 	.debug        (debug1)       ,
 	/* Dram Controller pins */ 
 	.mem_rst      (mem_rst)      ,
@@ -506,7 +517,10 @@ wr_mem inst_wrp0 (
 
 /* --------------------- Port 1 (Display) -------------------- */
 wire [7:0]debug2;
-rd_mem inst_rdmem (
+rd_mem #(
+	.DISP_HSTART ( DISP_HSTART ),
+	.DISP_VSTART ( DISP_VSTART )
+) inst_rdmem (
 	.debug            (debug2)             ,
 	.polarity         (polarity)           ,
 	.mode             (mode)               ,

@@ -1,4 +1,7 @@
-module wr_mem (
+module wr_mem #(
+	parameter DISP_HSTART = 0,
+	parameter DISP_VSTART = 0
+)(
 	output wire   [7:0] debug        ,
 	/* Dram Controller pins */
 	input  wire         calib_done   ,
@@ -28,6 +31,7 @@ module wr_mem (
 	input  wire         rst
 );
 
+localparam PWIDTH = 16;
 /* ------------------- Parameter -------------------- */
 localparam BRST_LEN      = 6'd63;
 localparam WRITE_CMD     =  3'd2;
@@ -36,6 +40,7 @@ localparam IDLE          = 2'b00,
            WRD           = 2'b10,
            CMD           = 2'b11;
 
+localparam DISP_HSTART_BYTE = DISP_HSTART * (PWIDTH/8);
 /* ------------------- Reg / Wire -------------------- */ 
 reg  [1:0] state;
 reg  [6:0] wr_cnt; 
@@ -103,8 +108,8 @@ always @ (posedge cmd_clk) begin
 							if (wr_cnt == 7'd2 && idata[128] == 1'b1) begin
 								line <= cline[10:0];
 								case(cpxl[0])
-									1'b0 : cmd_b <= 13'd0;
-									1'b1 : cmd_b <= 13'd1024;
+									1'b0 : cmd_b <= 13'd0 + DISP_HSTART_BYTE;
+									1'b1 : cmd_b <= 13'd1024 + DISP_HSTART_BYTE;
 								endcase
 							end
 							wr_cnt  <= wr_cnt + 7'd1;

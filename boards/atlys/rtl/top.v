@@ -40,6 +40,10 @@ module top (
 	output wire                  [7:0] LED
 );
 
+/* ------------ DISPLAY Parameters ---------------- */
+parameter DISP_HSTART = 0;
+parameter DISP_VSTART = 0;
+
 /* ------------ MCB Parameters ---------------- */
 parameter C3_NUM_DQ_PINS          = 16;
 parameter C3_MEM_ADDR_WIDTH       = 13;       
@@ -748,7 +752,10 @@ dvi_decoder dvi_rx1 (
 ); 
 `endif
 
-mixer inst_mixer (
+mixer #(
+	.DISP_HSTART ( DISP_HSTART ),
+	.DISP_VSTART ( DISP_VSTART )
+) inst_mixer (
 	/* Input Port 0 */
 	.pclk0           (rx0_pclk)  ,
 	.hs0             (rx0_hsync) ,
