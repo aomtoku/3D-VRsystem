@@ -373,7 +373,7 @@ wire t1 = {tr1, trr1} == 2'b01;
 reg testpr, perr, full;
 // Arbiter
 always @ (posedge clkmem) begin
-	if (mem_rst) begin
+	if (vrst) begin
 		darv      <= 2'd0; arb_state <= 2'd0;
 		shiftcnt0 <= 8'd0; shiftcnt1 <= 8'd0;
 		trr0      <= 1'd0; tr0       <= 1'd0;
@@ -381,13 +381,13 @@ always @ (posedge clkmem) begin
 		testpr    <= 1'd0; perr      <= 1'd0;
 		//full      <= 1'd0;
 	end else begin
-		if (vrst) begin
-			darv      <= 2'd0; arb_state <= 2'd0;
-			shiftcnt0 <= 8'd0; shiftcnt1 <= 8'd0;
-			trr0      <= 1'd0; tr0       <= 1'd0;
-			trr1      <= 1'd0; tr1       <= 1'd0;
-			testpr    <= 1'd0; perr      <= 1'd0;
-		end
+		//if (vrst) begin
+		//	darv      <= 2'd0; arb_state <= 2'd0;
+		//	shiftcnt0 <= 8'd0; shiftcnt1 <= 8'd0;
+		//	trr0      <= 1'd0; tr0       <= 1'd0;
+		//	trr1      <= 1'd0; tr1       <= 1'd0;
+		//	testpr    <= 1'd0; perr      <= 1'd0;
+		//end
 		tr0 <= trig0; trr0 <= tr0;
 		tr1 <= trig1; trr1 <= tr1;
 	
@@ -434,7 +434,7 @@ wire [1:0] xpos0 = hcnt0_shft[10:9];
 wire [1:0] xpos1 = hcnt1_shft[10:9];
 
 line_fifo inst_lfifo0 ( // 24bit x 1024 {12'hcnt, 12'vcnt}
-	.rst   ( vrst || bsw || mem_rst ),
+	.rst   ( vrst || bsw ),
 	.wr_clk( pclk0      ),
 	.rd_clk( clkmem     ),  
 	.din   ({113'd0, fin0, xpos0, vcnt0}),
@@ -446,7 +446,7 @@ line_fifo inst_lfifo0 ( // 24bit x 1024 {12'hcnt, 12'vcnt}
 );
 
 line_fifo inst_lfifo1 (
-	.rst   ( vrst || bsw || mem_rst ),
+	.rst   ( vrst || bsw ),
 	.wr_clk( pclk1        ),
 	.rd_clk( clkmem       ),  
 	.din   ({113'd0, fin1, xpos1, vcnt1}),
@@ -553,7 +553,7 @@ rd_mem #(
 
 reg regfull0, regfull1;
 always @ (posedge clkmem)
-	if (rst||mem_rst||bsw) begin
+	if (rst||bsw) begin
 		regfull0 <= 0;
 		regfull1 <= 0;
 	end else begin

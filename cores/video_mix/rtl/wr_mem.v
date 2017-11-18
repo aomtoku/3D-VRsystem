@@ -69,7 +69,7 @@ wire doneg = doner || donebb;
 assign wr_fifo_rd_en= wr_eng &&( ~(state == WAIT && idata[128]) || (wr_cnt != 0 && state == WRD));
 
 always @ (posedge cmd_clk) begin
-	if (mem_rst) begin
+	if (rst | ~calib_done) begin
 		state     <=  IDLE;  wr_cnt    <=  7'd0;
 		line      <= 11'd0; 
 		cmd_en    <=  1'd0;  cmd_b     <= 13'd0;

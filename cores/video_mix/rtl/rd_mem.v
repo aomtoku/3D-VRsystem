@@ -168,7 +168,7 @@ always @ (posedge pclk)
 //`define LINE2
 
 always @ (posedge memclk) begin
-	if (mem_rst) begin
+	if (rst) begin
 		state       <= IDLE;   done        <= 4'd0;
 		cmd_en      <= 1'b0;   rd_en       <= 1'b0;
 		cntr        <= 8'd0;   cmd_byte    <=30'd0;
@@ -260,7 +260,7 @@ wire rd_en_f = (mode == SW_HMD)  ? fifo_wr_en :
                (mode == SW_720P) ? fifo_wr_en : 0;
 
 wr_fifo4line rd_fifo (
-	.rst    ( rst||mem_rst ),
+	.rst    ( rst ),
 	.wr_clk ( memclk       ),
 	.rd_clk ( pclk         ),
 	.din    ( mcb_rd_data  ),
@@ -289,33 +289,33 @@ ll151d inst_ll151d (
 );
 
 
-reg [29:0] addr_reg;
-reg        cmd_en_reg;
-reg [2:0]  state_reg;
-reg [7:0]  brstcnt_reg;
-reg        full_reg;
-reg [10:0] linecnt_reg;
-reg [10:0] linedepth_reg;
-
-always @ (posedge memclk) begin
-	if (mem_rst) begin
-		addr_reg    <= 0;
-		cmd_en_reg  <= 0;
-		state_reg   <= 0;
-		brstcnt_reg <= 0;
-		full_reg    <= 0;
-		linecnt_reg <= 0;
-		linedepth_reg <= 0;
-	end else begin
-		addr_reg    <= cmd_byte;
-		cmd_en_reg  <= cmd_en;
-		state_reg   <= state;
-		brstcnt_reg <= brstcnt;
-		full_reg    <= fifo_full;
-		linecnt_reg <= linecnt;
-		linedepth_reg <= linedepth;
-	end
-end
+//reg [29:0] addr_reg;
+//reg        cmd_en_reg;
+//reg [2:0]  state_reg;
+//reg [7:0]  brstcnt_reg;
+//reg        full_reg;
+//reg [10:0] linecnt_reg;
+//reg [10:0] linedepth_reg;
+//
+//always @ (posedge memclk) begin
+//	if (mem_rst) begin
+//		addr_reg    <= 0;
+//		cmd_en_reg  <= 0;
+//		state_reg   <= 0;
+//		brstcnt_reg <= 0;
+//		full_reg    <= 0;
+//		linecnt_reg <= 0;
+//		linedepth_reg <= 0;
+//	end else begin
+//		addr_reg    <= cmd_byte;
+//		cmd_en_reg  <= cmd_en;
+//		state_reg   <= state;
+//		brstcnt_reg <= brstcnt;
+//		full_reg    <= fifo_full;
+//		linecnt_reg <= linecnt;
+//		linedepth_reg <= linedepth;
+//	end
+//end
 
 //
 //wire [35:0] control0;
