@@ -173,7 +173,7 @@ always @ (posedge memclk) begin
 		cmd_en      <= 1'b0;   rd_en       <= 1'b0;
 		cntr        <= 8'd0;   cmd_byte    <=30'd0;
 		brstcnt     <= 8'd0;   memcon_done <= 1'b0;
-		brst_cnt_p  <=13'd0;   linecnt     <=11'd0;
+		brst_cnt_p  <= DISP_HSTART_BYTE;   linecnt     <=11'd0;
 	end else begin
 		done    <= {done[2:0], memcon_done};
 		vs_buf  <= (polarity) ? vs : ~vs; vs_buff <= vs_buf;
@@ -182,7 +182,7 @@ always @ (posedge memclk) begin
 			IDLE : begin
 				if ({memcon_en, memcon_donep} == 2'b10) state <= ISSUE;
 				brstcnt     <= 0;
-				brst_cnt_p  <= 0;
+				brst_cnt_p  <= DISP_HSTART_BYTE;
 				cmd_en      <= 0;
 				memcon_done <= 0;
 			end

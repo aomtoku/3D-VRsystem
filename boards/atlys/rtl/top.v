@@ -41,7 +41,7 @@ module top (
 );
 
 /* ------------ DISPLAY Parameters ---------------- */
-parameter DISP_HSTART = 0;
+parameter DISP_HSTART = 480;
 parameter DISP_VSTART = 0;
 
 /* ------------ MCB Parameters ---------------- */

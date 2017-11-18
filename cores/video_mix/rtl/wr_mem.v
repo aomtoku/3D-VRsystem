@@ -86,7 +86,7 @@ always @ (posedge cmd_clk) begin
 					end
 					wr_cnt  <= 7'd0;
 					cmd_en  <= 1'b0;
-					cmd_b   <= 13'd1024;
+					cmd_b   <= 13'd1024 + DISP_HSTART_BYTE;
 					doner   <= 1'b0;
 					cmd_addr<= 30'd0;
 				end 
